@@ -10,3 +10,6 @@ mcpServers:
   - proxy: contract-store
     env:
       url: CONTRACT_STORE_MCP_URL
+org: default
+project: cragent
+agent: newoneeve19thoct

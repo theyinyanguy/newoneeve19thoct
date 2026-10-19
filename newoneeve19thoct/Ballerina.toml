@@ -1,0 +1,10 @@
+[package]
+org = "puneetmakwana"
+name = "newoneeve19thoct"
+version = "0.1.0"
+distribution = "2201.14.0"
+title = "newoneeve19thOct"
+
+[build-options]
+sticky = true
+observabilityIncluded = true

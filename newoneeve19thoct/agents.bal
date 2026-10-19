@@ -15,12 +15,25 @@ isolated class SendEmailMockMcpToolkit {
     *ai:McpBaseToolKit;
     private final mcp:StreamableHttpClient mcpClient;
     private final readonly & ai:ToolConfig[] tools;
+    // The Agent Manager gateway requires the MCP proxy key in this header.
+    private final readonly & map<string> headers;
 
     public isolated function init(string serverUrl, mcp:Implementation info = {name: "MCP", version: "1.0.0"},
             *mcp:StreamableHttpClientTransportConfig config) returns ai:Error? {
+        self.headers = {"x-api-key": sendEmailMockMcpApiKey};
         do {
             self.mcpClient = check new mcp:StreamableHttpClient(serverUrl, config);
-            self.tools = check ai:getPermittedMcpToolConfigs(self.mcpClient, info, self.callTool).cloneReadOnly();
+            // ai:getPermittedMcpToolConfigs can't send headers, so initialize and list tools directly.
+            _ = check self.mcpClient->initialize(info, headers = self.headers);
+            mcp:ListToolsResult result = check self.mcpClient->listTools(self.headers);
+            ai:ToolConfig[] toolConfigs = from mcp:ToolDefinition tool in result.tools
+                select {
+                    name: tool.name,
+                    description: tool.description ?: "",
+                    parameters: <map<json>>tool.inputSchema,
+                    caller: self.callTool
+                };
+            self.tools = toolConfigs.cloneReadOnly();
         } on fail error e {
             return error ai:Error("Failed to initialize MCP toolkit", e);
         }
@@ -30,7 +43,7 @@ isolated class SendEmailMockMcpToolkit {
 
     @ai:AgentTool
     public isolated function callTool(mcp:CallToolParams params) returns mcp:CallToolResult|error {
-        return self.mcpClient->callTool(params);
+        return self.mcpClient->callTool(params, self.headers);
     }
 }
 
@@ -38,12 +51,25 @@ isolated class ContractStoreMcpToolkit {
     *ai:McpBaseToolKit;
     private final mcp:StreamableHttpClient mcpClient;
     private final readonly & ai:ToolConfig[] tools;
+    // The Agent Manager gateway requires the MCP proxy key in this header.
+    private final readonly & map<string> headers;
 
     public isolated function init(string serverUrl, mcp:Implementation info = {name: "MCP", version: "1.0.0"},
             *mcp:StreamableHttpClientTransportConfig config) returns ai:Error? {
+        self.headers = {"x-api-key": contractStoreMcpApiKey};
         do {
             self.mcpClient = check new mcp:StreamableHttpClient(serverUrl, config);
-            self.tools = check ai:getPermittedMcpToolConfigs(self.mcpClient, info, self.callTool).cloneReadOnly();
+            // ai:getPermittedMcpToolConfigs can't send headers, so initialize and list tools directly.
+            _ = check self.mcpClient->initialize(info, headers = self.headers);
+            mcp:ListToolsResult result = check self.mcpClient->listTools(self.headers);
+            ai:ToolConfig[] toolConfigs = from mcp:ToolDefinition tool in result.tools
+                select {
+                    name: tool.name,
+                    description: tool.description ?: "",
+                    parameters: <map<json>>tool.inputSchema,
+                    caller: self.callTool
+                };
+            self.tools = toolConfigs.cloneReadOnly();
         } on fail error e {
             return error ai:Error("Failed to initialize MCP toolkit", e);
         }
@@ -53,6 +79,6 @@ isolated class ContractStoreMcpToolkit {
 
     @ai:AgentTool
     public isolated function callTool(mcp:CallToolParams params) returns mcp:CallToolResult|error {
-        return self.mcpClient->callTool(params);
+        return self.mcpClient->callTool(params, self.headers);
     }
 }
